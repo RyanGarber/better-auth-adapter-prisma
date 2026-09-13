@@ -1,0 +1,64 @@
+{
+  "name": "@ryangarber/better-auth-adapter-prisma",
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Better Auth adapter for Prisma 8 PostgreSQL with codec-preserving additional user fields",
+  "sideEffects": false,
+  "main": "./dist/index.mjs",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist",
+    "NOTICE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "lint": "biome check src test --ignore-unknown=true",
+    "test": "vitest run",
+    "prepublishOnly": "pnpm lint && pnpm typecheck && pnpm typecheck:contract && pnpm build && pnpm test",
+    "typecheck": "tsc --noEmit",
+    "release": "bumpp --commit --push --tag && pnpm publish",
+    "typecheck:contract": "tsc -p tsconfig.contract.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ryangarber/better-auth-prisma-8-adapter.git"
+  },
+  "keywords": [
+    "better-auth",
+    "prisma",
+    "adapter"
+  ],
+  "author": "Ryan Garber <ryanmichaelgarber@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@better-auth/core": "1.7.4",
+    "@biomejs/biome": "^2.5.13",
+    "@prisma/orm-postgres": "8.0.0-rc.8",
+    "@prisma/orm-toolchain": "8.0.0-rc.8",
+    "@ryangarber/prisma-orm-extension-zod": "0.1.2",
+    "@types/node": "^22.20.2",
+    "better-auth": "1.7.4",
+    "bumpp": "^12.3.0",
+    "temporal-spec": "^1.0.1",
+    "tsdown": "^0.23.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0",
+    "zod": "^4.6.2"
+  },
+  "types": "./dist/index.d.mts",
+  "peerDependencies": {
+    "@better-auth/core": "1.7.4",
+    "@prisma/orm-postgres": "8.0.0-rc.8"
+  },
+  "dependencies": {
+    "temporal-polyfill": "^1.0.4"
+  }
+}

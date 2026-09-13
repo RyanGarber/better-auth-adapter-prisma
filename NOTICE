@@ -1,0 +1,4 @@
+Adapter behavior is based on Better Auth's MIT-licensed Prisma adapter:
+https://github.com/better-auth/better-auth/tree/main/packages/prisma-adapter
+Copyright (c) 2024 - present, Bereket Engida. See its MIT license:
+https://github.com/better-auth/better-auth/blob/main/LICENSE.md

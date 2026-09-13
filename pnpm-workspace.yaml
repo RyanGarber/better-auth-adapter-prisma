@@ -1,0 +1,4 @@
+allowBuilds:
+  esbuild: false
+minimumReleaseAgeExclude:
+  - '@ryangarber/prisma-orm-extension-zod@0.1.2'
