@@ -20,7 +20,7 @@
   },
   "scripts": {
     "build": "tsdown",
-    "lint": "biome check src test --ignore-unknown=true",
+    "lint": "biome check --write",
     "test": "vitest run",
     "prepublishOnly": "pnpm lint && pnpm typecheck && pnpm typecheck:contract && pnpm build && pnpm test",
     "typecheck": "tsc --noEmit",
