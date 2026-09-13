@@ -2,3 +2,4 @@ allowBuilds:
   esbuild: false
 minimumReleaseAgeExclude:
   - '@ryangarber/*'
+  - '@prisma/*'

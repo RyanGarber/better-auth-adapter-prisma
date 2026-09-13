@@ -19,7 +19,11 @@ import {
 import type { PostgresClient } from "@prisma/orm-postgres/runtime";
 import { dateInput, dateOutput } from "./dates";
 
-export type { PrismaUserFields, TypedPrismaAuth } from "./user-fields";
+export type {
+	PrismaUserFields,
+	TypedPrismaAuth,
+	TypedPrismaClient,
+} from "./user-fields";
 export { prismaUserFields } from "./user-fields";
 
 export interface Prisma8Config {

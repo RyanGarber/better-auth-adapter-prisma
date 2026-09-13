@@ -1,13 +1,13 @@
 # Better Auth adapter for Prisma 8
 
-A PostgreSQL adapter for **Prisma 8.0.0-rc.8** and **Better Auth 1.7.4**, based on the behavior of Better Auth's Prisma 7 adapter. Uses Prisma 8's contract-driven ORM, including extension codecs, instead of the legacy Prisma Client API.
+A PostgreSQL adapter for **Prisma 8.0.0-rc.10** and **Better Auth 1.7.4**, based on the behavior of Better Auth's Prisma 7 adapter. Uses Prisma 8's contract-driven ORM, including extension codecs, instead of the legacy Prisma Client API.
 
 Supports CRUD, filtering, selections, pagination, ordering, transactions, joins, numeric/UUID identifiers, and additional fields. PostgreSQL is the supported target; this package does not implement the separate MongoDB API or claim SQLite/MySQL support.
 
 ## Install
 
 ```sh
-pnpm add @ryangarber/better-auth-adapter-prisma better-auth@1.7.4 @better-auth/core@1.7.4 @prisma/orm-postgres@8.0.0-rc.8 temporal-polyfill
+pnpm add @ryangarber/better-auth-adapter-prisma better-auth@1.7.4 @better-auth/core@1.7.4 @prisma/orm-postgres@8.0.0-rc.10 temporal-polyfill
 ```
 
 Prisma RC versions are pinned because their query and generated-type APIs change between releases. The adapter does not create a database connection or close your client; pass your application's existing client with its runtime extensions registered.
@@ -35,7 +35,7 @@ For example, using [the Zod extension](https://github.com/ryangarber/prisma-orm-
 
 ```sh
 pnpm add @ryangarber/prisma-orm-extension-zod@0.1.2 zod
-pnpm add -D @prisma/orm-toolchain@8.0.0-rc.8
+pnpm add -D @prisma/orm-toolchain@8.0.0-rc.10
 ```
 
 ```ts
@@ -99,7 +99,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter, prismaUserFields } from "@ryangarber/better-auth-adapter-prisma";
 import { db } from "./prisma/db";
 
-const userFields = prismaUserFields(db.orm.public.User)({
+export const userFields = prismaUserFields(db.orm.public.User)({
   profile: { type: "json", required: true },
 });
 
@@ -123,13 +123,37 @@ type User = typeof auth.$Infer.Session.user;
 // User["profile"] is { name: string; age: number }.
 ```
 
-Use the actual namespace and an unprojected collection. The helper validates field names at compile time, including a field's optional `fieldName` mapping. It reads the contract's **input** type map separately from the collection's output type: Prisma RC.8's create signatures alone are insufficient for codecs with different input/output types.
+Use the actual namespace and an unprojected collection. The helper validates field names at compile time, including a field's optional `fieldName` mapping. It reads the contract's **input** type map separately from the collection's output type: Prisma 8.0.0-rc.10's create signatures alone are insufficient for codecs with different input/output types.
 
 The helper preserves `required`, `input: false`, `returned: false`, and defaulted input optionality. It types `signUpEmail` and `updateUser` bodies, full user objects returned by server endpoints, and `auth.$Infer.Session.user`. Standard response/header/status options remain available. It returns the same auth object at runtime, and checks that its `additionalFields` object was installed on that instance.
 
 Declare custom structured values as `type: "json"`. Use `type: "date"` for ordinary JavaScript `Date` fields. Keep any Better Auth `transform` or transforming `validator.input` consistent with the codec's input/output: those run independently of Prisma, and the helper does not infer their effects. In particular, passing the transforming `Profile` schema above as a Better Auth input validator would convert `age` before Prisma receives it; let the Prisma codec validate it instead.
 
-**Scope of inference:** this helper supplies a server API type view. It does not change Better Auth's hook/context types, plugin-defined input bodies, or the built-in `inferAdditionalFields` client plugin. Standard JSON HTTP responses also have different semantics from decoded database values: JSON turns dates into strings, cannot serialize `bigint`, and does not preserve `Map`/`Set` instances. Use JSON-compatible public fields or an explicit serializer/client type layer for those values; the adapter and helper do not install an HTTP serializer. Cookie caching and other serialized stores have the same transport considerations.
+For the client, keep Better Auth's `inferAdditionalFields` plugin and wrap the client with `inferPrismaClient`. The `/client` entry point has no server runtime dependencies; import the server field helper only as a type:
+
+```ts
+import { createAuthClient } from "better-auth/client";
+import { inferAdditionalFields } from "better-auth/client/plugins";
+import { inferPrismaClient } from "@ryangarber/better-auth-adapter-prisma/client";
+import type { auth, userFields } from "./auth";
+
+export const authClient = inferPrismaClient<typeof userFields>()(createAuthClient({
+  plugins: [inferAdditionalFields<typeof auth>()],
+}));
+
+await authClient.signUp.email({
+  email: "ada@example.com",
+  name: "Ada",
+  password: "a sufficiently long password",
+  profile: { name: "Ada", age: "36" },
+});
+const session = await authClient.getSession();
+session.data?.user.profile.age; // number
+```
+
+This preserves codec input/output types on signup, updates, session results, and `$Infer.Session`. Where the field helper is already available at runtime, `userFields.inferClient(client)` provides the same type view. Both wrappers return the original client unchanged. Better Auth's plugin alone still uses its primitive field inference.
+
+**Scope of inference:** these helpers do not change Better Auth's hook/context types or plugin-defined input bodies. Standard JSON HTTP responses also have different semantics from decoded database values: JSON turns dates into strings, cannot serialize `bigint`, and does not preserve `Map`/`Set` instances. Use JSON-compatible public fields or an explicit serializer/client type layer for those values; the adapter and helper do not install an HTTP serializer. Cookie caching and other serialized stores have the same transport considerations.
 
 ## Names and defaults
 

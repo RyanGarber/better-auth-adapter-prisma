@@ -1,3 +1,4 @@
+import type { ClientFetchOption } from "@better-auth/core";
 import type { DBFieldAttribute } from "@better-auth/core/db";
 import type { ExtractFieldInputTypes } from "@prisma/orm-postgres/family-contract/types";
 import type { Collection } from "@prisma/orm-postgres/orm-client";
@@ -175,11 +176,92 @@ export type TypedPrismaAuth<
 	};
 };
 
+type ClientBody<
+	B,
+	C extends CollectionShape,
+	D extends Definitions,
+	Update,
+> = Omit<NonNullable<B>, keyof D> &
+	(Update extends true ? Partial<UserInput<C, D>> : UserInput<C, D>);
+
+type ClientArgs<
+	Args extends unknown[],
+	C extends CollectionShape,
+	D extends Definitions,
+	Path,
+> = Path extends "signUp.email" | "updateUser"
+	? Args extends [unknown?, ...infer Rest]
+		? Path extends "updateUser"
+			? [body?: ClientBody<Args[0], C, D, true>, ...Rest]
+			: [body: ClientBody<Args[0], C, D, false>, ...Rest]
+		: Args
+	: Args;
+
+type FetchData<T> = T extends { error: null; data: infer Data }
+	? Data
+	: T extends { error: unknown; data: null }
+		? never
+		: T;
+
+type ClientResult<R, F, C extends CollectionShape, D extends Definitions> =
+	R extends Promise<infer Value>
+		? Promise<
+				ReplaceUser<F extends { throw: true } ? FetchData<Value> : Value, C, D>
+			>
+		: ReplaceUser<R, C, D>;
+
+type WithFetchOptions<Args extends unknown[], F> = {
+	[K in keyof Args]: K extends "0"
+		? "fetchOptions" extends keyof NonNullable<Args[K]>
+			? Omit<NonNullable<Args[K]>, "fetchOptions"> & { fetchOptions?: F }
+			: Args[K]
+		: K extends "1"
+			? F
+			: Args[K];
+};
+
+type ClientView<
+	T,
+	C extends CollectionShape,
+	D extends Definitions,
+	Path extends string = "",
+> = T extends (...args: infer Args) => infer Result
+	? Path extends "useSession" | `useSession.${string}`
+		? (...args: Args) => ReplaceUser<Result, C, D>
+		: <F extends ClientFetchOption = Record<never, never>>(
+				...args: WithFetchOptions<ClientArgs<Args, C, D, Path>, F>
+			) => ClientResult<Result, F, C, D>
+	: T extends object
+		? {
+				[K in keyof T]: K extends "$fetch" | "$store" | "$ERROR_CODES"
+					? T[K]
+					: K extends "$Infer"
+						? ReplaceUser<T[K], C, D>
+						: ClientView<
+								T[K],
+								C,
+								D,
+								Path extends "" ? K & string : `${Path}.${K & string}`
+							>;
+			}
+		: T;
+
+/** A client type view; does not install a serializer or change client behavior. */
+export type TypedPrismaClient<
+	A,
+	C extends CollectionShape,
+	D extends Definitions,
+> = ClientView<A, C, D>;
+
 export interface PrismaUserFields<
 	C extends CollectionShape,
 	D extends Definitions,
 > {
 	additionalFields: D;
+	/** Apply to a client configured with inferAdditionalFields<typeof auth>(). */
+	inferClient<A extends { $Infer: { Session: unknown } }>(
+		client: A,
+	): TypedPrismaClient<A, C, D>;
 	/** Apply after betterAuth({ user: { additionalFields } }). For direct server calls, not HTTP deserialization. */
 	inferAuth<A extends AuthShape>(auth: A): TypedPrismaAuth<A, C, D>;
 }
@@ -195,6 +277,9 @@ export function prismaUserFields<C extends CollectionShape>(_collection: C) {
 		},
 	): PrismaUserFields<C, D> => ({
 		additionalFields: definitions,
+		inferClient(client) {
+			return client as unknown as TypedPrismaClient<typeof client, C, D>;
+		},
 		inferAuth(auth) {
 			if (auth.options.user?.additionalFields !== definitions) {
 				throw new Error(
