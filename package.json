@@ -41,9 +41,9 @@
   "devDependencies": {
     "@better-auth/core": "1.7.4",
     "@biomejs/biome": "^2.5.13",
-    "@prisma/orm-postgres": "8.0.0-rc.8",
-    "@prisma/orm-toolchain": "8.0.0-rc.8",
-    "@ryangarber/prisma-orm-extension-zod": "0.1.2",
+    "@prisma/orm-postgres": "8.0.0-rc.9",
+    "@prisma/orm-toolchain": "8.0.0-rc.9",
+    "@ryangarber/prisma-orm-extension-zod": "0.2.2",
     "@types/node": "^22.20.2",
     "better-auth": "1.7.4",
     "bumpp": "^12.3.0",
@@ -56,9 +56,10 @@
   "types": "./dist/index.d.mts",
   "peerDependencies": {
     "@better-auth/core": "1.7.4",
-    "@prisma/orm-postgres": "8.0.0-rc.8"
+    "@prisma/orm-postgres": "8.0.0-rc.9"
   },
   "dependencies": {
-    "temporal-polyfill": "^1.0.4"
-  }
+    "temporal-polyfill": "^1.0.5"
+  },
+  "packageManager": "pnpm@12.3.4+sha512.961aa41fb077da3a04a441d9f8e15ebc0c96da8ef710b2eb67bf9ee7cb0610eabd48f1fd85f51cffe73846785fa0f87c56a3a872a1d893f8446741b5cce45457"
 }
