@@ -96,10 +96,12 @@ Better Auth 1.7.4 infers `type: "json"` as a generic record and does not derive 
 
 ```ts
 import { betterAuth } from "better-auth";
-import { prismaAdapter, prismaUserFields } from "@ryangarber/better-auth-adapter-prisma";
+import { prismaAdapter } from "@ryangarber/better-auth-adapter-prisma";
+import { prismaUserFields } from "@ryangarber/better-auth-adapter-prisma/client";
+import type { Contract } from "./prisma/contract";
 import { db } from "./prisma/db";
 
-export const userFields = prismaUserFields(db.orm.public.User)({
+export const userFields = prismaUserFields<Contract, "public", "User">()({
   profile: { type: "json", required: true },
 });
 
@@ -128,6 +130,8 @@ Use the actual namespace and an unprojected collection. The helper validates fie
 The helper preserves `required`, `input: false`, `returned: false`, and defaulted input optionality. It types `signUpEmail` and `updateUser` bodies, full user objects returned by server endpoints, and `auth.$Infer.Session.user`. Standard response/header/status options remain available. It returns the same auth object at runtime, and checks that its `additionalFields` object was installed on that instance.
 
 Declare custom structured values as `type: "json"`. Use `type: "date"` for ordinary JavaScript `Date` fields. Keep any Better Auth `transform` or transforming `validator.input` consistent with the codec's input/output: those run independently of Prisma, and the helper does not infer their effects. In particular, passing the transforming `Profile` schema above as a Better Auth input validator would convert `age` before Prisma receives it; let the Prisma codec validate it instead.
+
+The contract-only form uses a type-only import from `contract.d.ts`; it needs neither `contract.json` nor a database instance. You can put `userFields` in a shared module using the `/client` import above and call `userFields.inferClient(client)` there. Keep database and server auth imports in the server module. The existing `prismaUserFields(db.orm.public.User)` form remains supported for server usage.
 
 For the client, keep Better Auth's `inferAdditionalFields` plugin and wrap the client with `inferPrismaClient`. The `/client` entry point has no server runtime dependencies; import the server field helper only as a type:
 

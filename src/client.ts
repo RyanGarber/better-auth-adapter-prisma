@@ -8,3 +8,5 @@ export function inferPrismaClient<Fields>() {
 		? TypedPrismaClient<A, C, D>
 		: never => client as never;
 }
+
+export { prismaUserFields } from "./user-fields";

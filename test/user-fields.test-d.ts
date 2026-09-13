@@ -3,8 +3,8 @@ import { betterAuth } from "better-auth";
 import { createAuthClient } from "better-auth/client";
 import { inferAdditionalFields } from "better-auth/client/plugins";
 import { expectTypeOf } from "vitest";
-import { inferPrismaClient } from "../src/client";
-import { prismaAdapter, prismaUserFields } from "../src/index";
+import { inferPrismaClient, prismaUserFields } from "../src/client";
+import { prismaAdapter } from "../src/index";
 import type { Contract } from "./fixtures/contract";
 import contractJson from "./fixtures/contract.json";
 import { extension } from "./fixtures/schemas";
@@ -14,13 +14,21 @@ it("infers codec inputs and outputs through the server API", () => {
 		contractJson,
 		extensions: [extension.runtime],
 	});
-	const fields = prismaUserFields(db.orm.adapter_test.User)({
+	const fields = prismaUserFields<Contract, "adapter_test", "User">()({
 		profile: { type: "json", required: true },
 		rich: { type: "json", required: false },
 		lastSeen: { type: "date", required: false },
 		nickname: { type: "string", fieldName: "role", required: false },
 		secret: { type: "string", input: false, returned: false },
 	});
+	const legacyFields = prismaUserFields(db.orm.adapter_test.User)(
+		fields.additionalFields,
+	);
+	expectTypeOf(legacyFields).toEqualTypeOf(fields);
+	// @ts-expect-error Unknown namespace.
+	prismaUserFields<Contract, "missing", "User">();
+	// @ts-expect-error Unknown model.
+	prismaUserFields<Contract, "adapter_test", "Missing">();
 	const auth = fields.inferAuth(
 		betterAuth({
 			database: prismaAdapter(db),
@@ -39,8 +47,10 @@ it("infers codec inputs and outputs through the server API", () => {
 	>();
 	// @ts-expect-error Secret is excluded from responses.
 	auth.$Infer.Session.user.secret;
-	// @ts-expect-error Unknown contract field.
-	prismaUserFields(db.orm.adapter_test.User)({ missing: { type: "json" } });
+	prismaUserFields<Contract, "adapter_test", "User">()({
+		// @ts-expect-error Unknown contract field.
+		missing: { type: "json" },
+	});
 	const client = inferPrismaClient<typeof fields>()(
 		createAuthClient({
 			plugins: [inferAdditionalFields<typeof auth>()],

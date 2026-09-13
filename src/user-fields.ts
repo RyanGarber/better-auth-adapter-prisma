@@ -1,18 +1,27 @@
 import type { ClientFetchOption } from "@better-auth/core";
 import type { DBFieldAttribute } from "@better-auth/core/db";
-import type { ExtractFieldInputTypes } from "@prisma/orm-postgres/family-contract/types";
+import type {
+	ExtractFieldInputTypes,
+	ExtractFieldOutputTypes,
+} from "@prisma/orm-postgres/family-contract/types";
 import type { Collection } from "@prisma/orm-postgres/orm-client";
 
-type CollectionShape = {
-	first: (...args: never[]) => Promise<unknown>;
-	create: (...args: never[]) => Promise<unknown>;
-};
+type ContractModelShape = { input: unknown; output: unknown; fields: unknown };
+type CollectionShape =
+	| ContractModelShape
+	| {
+			first: (...args: never[]) => Promise<unknown>;
+			create: (...args: never[]) => Promise<unknown>;
+	  };
 type Definitions = Record<string, DBFieldAttribute>;
-type Output<C extends CollectionShape> = NonNullable<
-	Awaited<ReturnType<C["first"]>>
->;
-type Input<C extends CollectionShape> =
-	C extends Collection<infer CT, infer M, infer _Row, infer State>
+type Output<C extends CollectionShape> = C extends ContractModelShape
+	? C["output"]
+	: C extends { first: (...args: never[]) => Promise<unknown> }
+		? NonNullable<Awaited<ReturnType<C["first"]>>>
+		: never;
+type Input<C extends CollectionShape> = C extends ContractModelShape
+	? C["input"]
+	: C extends Collection<infer CT, infer M, infer _Row, infer State>
 		? State["nsId"] extends keyof ExtractFieldInputTypes<CT>
 			? M extends keyof ExtractFieldInputTypes<CT>[State["nsId"]]
 				? ExtractFieldInputTypes<CT>[State["nsId"]][M]
@@ -22,16 +31,19 @@ type Input<C extends CollectionShape> =
 type StorageKey<D, K> = D extends { fieldName: infer F extends string } ? F : K;
 type StoredField<Shape, D, K> =
 	StorageKey<D, K> extends keyof Shape ? Shape[StorageKey<D, K>] : never;
-type FieldCodec<C extends CollectionShape, D, K> =
-	C extends Collection<infer CT, infer M, infer _Row, infer State>
+type Fields<C extends CollectionShape> = C extends ContractModelShape
+	? C["fields"]
+	: C extends Collection<infer CT, infer M, infer _Row, infer State>
 		? CT["domain"]["namespaces"][State["nsId"]]["models"][M] extends {
-				fields: infer Fields;
+				fields: infer F;
 			}
-			? StorageKey<D, K> extends keyof Fields
-				? Fields[StorageKey<D, K>] extends { type: { codecId: infer Codec } }
-					? Codec
-					: never
-				: never
+			? F
+			: never
+		: never;
+type FieldCodec<C extends CollectionShape, D, K> =
+	StorageKey<D, K> extends keyof Fields<C>
+		? Fields<C>[StorageKey<D, K>] extends { type: { codecId: infer Codec } }
+			? Codec
 			: never
 		: never;
 type BuiltinDateCodec =
@@ -266,8 +278,49 @@ export interface PrismaUserFields<
 	inferAuth<A extends AuthShape>(auth: A): TypedPrismaAuth<A, C, D>;
 }
 
-/** Derive field input/output types from an unprojected Prisma User collection, including extension codecs. */
-export function prismaUserFields<C extends CollectionShape>(_collection: C) {
+type ContractShape = {
+	domain: {
+		namespaces: Record<string, { models: Record<string, { fields: unknown }> }>;
+	};
+};
+type ContractModel<
+	CT extends ContractShape,
+	NS extends keyof CT["domain"]["namespaces"],
+	M extends keyof CT["domain"]["namespaces"][NS]["models"],
+> = {
+	input: NS extends keyof ExtractFieldInputTypes<CT>
+		? M extends keyof ExtractFieldInputTypes<CT>[NS]
+			? ExtractFieldInputTypes<CT>[NS][M]
+			: never
+		: never;
+	output: NS extends keyof ExtractFieldOutputTypes<CT>
+		? M extends keyof ExtractFieldOutputTypes<CT>[NS]
+			? ExtractFieldOutputTypes<CT>[NS][M]
+			: never
+		: never;
+	fields: CT["domain"]["namespaces"][NS]["models"][M]["fields"];
+};
+
+/** Derive codec types using only the generated Contract type; no database or JSON import is needed. */
+export function prismaUserFields<
+	CT extends ContractShape,
+	NS extends keyof CT["domain"]["namespaces"],
+	M extends keyof CT["domain"]["namespaces"][NS]["models"],
+>(): FieldBuilder<ContractModel<CT, NS, M>>;
+/** Compatibility form for an unprojected Prisma User collection. */
+export function prismaUserFields<C extends CollectionShape>(
+	collection: C,
+): FieldBuilder<C>;
+export function prismaUserFields(
+	_collection?: CollectionShape,
+): FieldBuilder<CollectionShape> {
+	return createFieldBuilder<CollectionShape>();
+}
+
+type FieldBuilder<C extends CollectionShape> = ReturnType<
+	typeof createFieldBuilder<C>
+>;
+function createFieldBuilder<C extends CollectionShape>() {
 	return <const D extends Definitions>(
 		definitions: D & {
 			[K in keyof D]: StorageKey<D[K], K> extends keyof Output<C> &
