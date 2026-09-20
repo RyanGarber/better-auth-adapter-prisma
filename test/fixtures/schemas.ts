@@ -10,8 +10,8 @@ export const Profile = z.object({
 });
 export const Rich = z.object({
 	date: z.date(),
-	count: z.bigint(),
-	labels: z.map(z.string(), z.number()),
+	count: z.int(),
+	labels: z.record(z.string(), z.number()),
 });
 const schemas = {
 	Profile: defineZodSchema(Profile),

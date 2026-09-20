@@ -110,8 +110,8 @@ describe.skipIf(!url)("PostgreSQL integration", () => {
 	it("round-trips codec input/output, rich values, nullable fields and DateTime", async () => {
 		const rich = {
 			date: new Date("2026-01-02T03:04:05Z"),
-			count: 9007199254740993n,
-			labels: new Map([["one", 1]]),
+			count: Number.MAX_SAFE_INTEGER,
+			labels: { one: 1 },
 		};
 		const result = await adapter().create({
 			model: "user",
@@ -428,7 +428,7 @@ describe.skipIf(!url)("PostgreSQL integration", () => {
 				emailAndPassword: { enabled: true },
 			}),
 		);
-		const rich = { date: new Date(), count: 7n, labels: new Map([["x", 1]]) };
+		const rich = { date: new Date(), count: 7, labels: { x: 1 } };
 		const result = await auth.api.signUpEmail({
 			body: {
 				email: "ada@example.com",

@@ -1,6 +1,6 @@
 # Better Auth adapter for Prisma 8
 
-A PostgreSQL adapter for **Prisma 8.0.0-rc.10** and **Better Auth 1.7.4**, based on the behavior of Better Auth's Prisma 7 adapter. Uses Prisma 8's contract-driven ORM, including extension codecs, instead of the legacy Prisma Client API.
+A PostgreSQL adapter for **Prisma 8.0.0-rc.11** and **Better Auth ^1.7.5**, based on the behavior of Better Auth's Prisma 7 adapter. Uses Prisma 8's contract-driven ORM, including extension codecs, instead of the legacy Prisma Client API.
 
 Supports CRUD, filtering, selections, pagination, ordering, transactions, joins, numeric/UUID identifiers, and additional fields. PostgreSQL is the supported target; this package does not implement the separate MongoDB API or claim SQLite/MySQL support.
 
@@ -133,15 +133,15 @@ Declare custom structured values as `type: "json"`. Use `type: "date"` for ordin
 
 The contract-only form uses a type-only import from `contract.d.ts`; it needs neither `contract.json` nor a database instance. You can put `userFields` in a shared module using the `/client` import above and call `userFields.inferClient(client)` there. Keep database and server auth imports in the server module. The existing `prismaUserFields(db.orm.public.User)` form remains supported for server usage.
 
-For the client, keep Better Auth's `inferAdditionalFields` plugin and wrap the client with `inferPrismaClient`. The `/client` entry point has no server runtime dependencies; import the server field helper only as a type:
+For the client, keep Better Auth's `inferAdditionalFields` plugin and wrap the client with `inferAuthClient`. The `/client` entry point has no server runtime dependencies; import the server field helper only as a type:
 
 ```ts
 import { createAuthClient } from "better-auth/client";
 import { inferAdditionalFields } from "better-auth/client/plugins";
-import { inferPrismaClient } from "@ryangarber/better-auth-adapter-prisma/client";
+import { inferAuthClient } from "@ryangarber/better-auth-adapter-prisma/client";
 import type { auth, userFields } from "./auth";
 
-export const authClient = inferPrismaClient<typeof userFields>()(createAuthClient({
+export const authClient = inferAuthClient<typeof userFields>()(createAuthClient({
   plugins: [inferAdditionalFields<typeof auth>()],
 }));
 

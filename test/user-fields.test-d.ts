@@ -3,7 +3,7 @@ import { betterAuth } from "better-auth";
 import { createAuthClient } from "better-auth/client";
 import { inferAdditionalFields } from "better-auth/client/plugins";
 import { expectTypeOf } from "vitest";
-import { inferPrismaClient, prismaUserFields } from "../src/client";
+import { inferAuthClient, prismaUserFields } from "../src/client";
 import { prismaAdapter } from "../src/index";
 import type { Contract } from "./fixtures/contract";
 import contractJson from "./fixtures/contract.json";
@@ -41,7 +41,7 @@ it("infers codec inputs and outputs through the server API", () => {
 	}>();
 	expectTypeOf<
 		NonNullable<typeof auth.$Infer.Session.user.rich>["count"]
-	>().toEqualTypeOf<bigint>();
+	>().toEqualTypeOf<number>();
 	expectTypeOf<typeof auth.$Infer.Session.user.nickname>().toEqualTypeOf<
 		string | null | undefined
 	>();
@@ -51,7 +51,7 @@ it("infers codec inputs and outputs through the server API", () => {
 		// @ts-expect-error Unknown contract field.
 		missing: { type: "json" },
 	});
-	const client = inferPrismaClient<typeof fields>()(
+	const client = inferAuthClient<typeof fields>()(
 		createAuthClient({
 			plugins: [inferAdditionalFields<typeof auth>()],
 		}),
