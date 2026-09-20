@@ -7,7 +7,7 @@ Supports CRUD, filtering, selections, pagination, ordering, transactions, joins,
 ## Install
 
 ```sh
-pnpm add @ryangarber/better-auth-adapter-prisma better-auth@1.7.4 @better-auth/core@1.7.4 @prisma/orm-postgres@8.0.0-rc.10 temporal-polyfill
+pnpm add @ryangarber/better-auth-adapter-prisma better-auth@1.7.5 @better-auth/core@1.7.5 @prisma/orm-postgres@8.0.0-rc.11 temporal-polyfill
 ```
 
 Prisma RC versions are pinned because their query and generated-type APIs change between releases. The adapter does not create a database connection or close your client; pass your application's existing client with its runtime extensions registered.
@@ -34,8 +34,8 @@ Declare additional fields in both the Prisma contract and Better Auth. The adapt
 For example, using [the Zod extension](https://github.com/ryangarber/prisma-orm-extension-zod):
 
 ```sh
-pnpm add @ryangarber/prisma-orm-extension-zod@0.1.2 zod
-pnpm add -D @prisma/orm-toolchain@8.0.0-rc.10
+pnpm add @ryangarber/prisma-orm-extension-zod@0.2.4 zod
+pnpm add -D @prisma/orm-toolchain@8.0.0-rc.11
 ```
 
 ```ts
@@ -92,7 +92,7 @@ export const db = postgres<Contract>({
 
 ### Infer custom user types
 
-Better Auth 1.7.4 infers `type: "json"` as a generic record and does not derive additional-field types from validators or database adapters. Use `prismaUserFields` to bridge the emitted Prisma types into your direct server API:
+Better Auth 1.7.5 infers `type: "json"` as a generic record and does not derive additional-field types from validators or database adapters. Use `prismaUserFields` to bridge the emitted Prisma types into your direct server API:
 
 ```ts
 import { betterAuth } from "better-auth";
