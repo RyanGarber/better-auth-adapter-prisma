@@ -33,7 +33,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ryangarber/better-auth-prisma-8-adapter.git"
+    "url": "https://github.com/ryangarber/better-auth-adapter-prisma.git"
   },
   "keywords": [
     "better-auth",
