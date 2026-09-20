@@ -125,7 +125,7 @@ type User = typeof auth.$Infer.Session.user;
 // User["profile"] is { name: string; age: number }.
 ```
 
-Use the actual namespace and an unprojected collection. The helper validates field names at compile time, including a field's optional `fieldName` mapping. It reads the contract's **input** type map separately from the collection's output type: Prisma 8.0.0-rc.10's create signatures alone are insufficient for codecs with different input/output types.
+Use the actual namespace and an unprojected collection. The helper validates field names at compile time, including a field's optional `fieldName` mapping. It reads the contract's **input** type map separately from the collection's output type: Prisma 8.0.0-rc.11's create signatures alone are insufficient for codecs with different input/output types.
 
 The helper preserves `required`, `input: false`, `returned: false`, and defaulted input optionality. It types `signUpEmail` and `updateUser` bodies, full user objects returned by server endpoints, and `auth.$Infer.Session.user`. Standard response/header/status options remain available. It returns the same auth object at runtime, and checks that its `additionalFields` object was installed on that instance.
 
