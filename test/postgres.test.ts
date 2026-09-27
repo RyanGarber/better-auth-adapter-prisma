@@ -70,7 +70,6 @@ describe.skipIf(!url)("PostgreSQL integration", () => {
 				extensions: [extension.control],
 			}),
 			cwd: process.cwd(),
-			configPath: join(directory, "prisma.config.ts"),
 		});
 		const contractJson = JSON.parse(await readFile(emitted.files.json, "utf8"));
 		db = postgres({

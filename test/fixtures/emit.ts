@@ -8,6 +8,5 @@ const result = await executeContractEmit({
 		extensions: [extension.control],
 	}),
 	cwd: process.cwd(),
-	configPath: `${import.meta.dirname}/prisma.config.ts`,
 });
 console.log(result.files);
