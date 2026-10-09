@@ -1,11 +1,18 @@
 import "temporal-polyfill/global";
+
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { BetterAuthOptions } from "@better-auth/core";
 import { defineConfig } from "@prisma/orm-postgres/config";
+import {
+	dataTypeParams,
+	isSqlDataType,
+	renderSqlTypeName,
+} from "@prisma/orm-postgres/family-contract/data-type";
 import postgres from "@prisma/orm-postgres/runtime";
+import { createPostgresBuiltinDataTypeLookup } from "@prisma/orm-postgres/target/data-types";
 import { executeContractEmit } from "@prisma/orm-toolchain/cli/control-api";
 import { betterAuth } from "better-auth";
 import { prismaAdapter, prismaUserFields } from "../src/index";
@@ -15,6 +22,7 @@ import { extension } from "./fixtures/schemas";
 
 const { ADAPTER_TEST_DATABASE_URL: url } = process.env;
 const quote = (value: string) => `"${value.replaceAll('"', '""')}"`;
+const dataTypes = createPostgresBuiltinDataTypeLookup();
 
 describe.skipIf(!url)("PostgreSQL integration", () => {
 	const namespace = `ba_test_${randomUUID().replaceAll("-", "")}`;
@@ -82,10 +90,16 @@ describe.skipIf(!url)("PostgreSQL integration", () => {
 		const tables = db.contract.storage.namespaces[namespace]?.entries["table"];
 		if (!tables) throw new Error("Missing emitted tables");
 		for (const [name, table] of Object.entries(tables)) {
-			const columns = Object.entries(table.columns).map(
-				([key, col]) =>
-					`${quote(key)} ${col.nativeType}${col.nullable ? "" : " NOT NULL"}`,
-			);
+			const columns = Object.entries(table.columns).map(([key, col]) => {
+				const dataType = dataTypes.get(col.dataType);
+				if (!dataType || !isSqlDataType(dataType))
+					throw new Error(`Unknown SQL data type: ${col.dataType}`);
+				const type = renderSqlTypeName(
+					dataType,
+					dataTypeParams(dataType, col.typeParams),
+				);
+				return `${quote(key)} ${type}${col.many ? "[]" : ""}${col.nullable ? "" : " NOT NULL"}`;
+			});
 			columns.push(`PRIMARY KEY (id)`);
 			if (name === "People") columns.push("UNIQUE (email)");
 			if (name === "login_sessions") columns.push("UNIQUE (token)");

@@ -4,11 +4,12 @@ import {
 	defineZodSchema,
 } from "@ryangarber/prisma-orm-extension-zod/column-types";
 import { z } from "zod";
-export const Profile = z.object({
+
+const Profile = z.object({
 	name: z.string(),
 	age: z.string().transform(Number),
 });
-export const Rich = z.object({
+const Rich = z.object({
 	date: z.date(),
 	count: z.int(),
 	labels: z.record(z.string(), z.number()),

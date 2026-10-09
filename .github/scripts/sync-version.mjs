@@ -22,6 +22,7 @@ if (packageJson.peerDependencies?.["@prisma/orm-postgres"] !== postgresVersion) 
   packageJson.peerDependencies["@prisma/orm-postgres"] = postgresVersion;
   const indent = /^\t/m.test(source) ? "\t" : "  ";
   writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, indent)}\n`);
+  console.log(`Updated package.json to use @prisma/orm-postgres@${postgresVersion}.`);
 
   if (oldVersion) {
     const readmePath = new URL("../../README.md", import.meta.url);
@@ -31,4 +32,7 @@ if (packageJson.peerDependencies?.["@prisma/orm-postgres"] !== postgresVersion) 
 
     console.log(`Updated README.md to use @prisma/orm-postgres@${postgresVersion}.`);
   }
+}
+else {
+  console.log(`Versions already in sync: ${postgresVersion}.`);
 }
